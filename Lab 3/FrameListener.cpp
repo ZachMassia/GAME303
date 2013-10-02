@@ -118,8 +118,7 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 	if (key->isKeyDown(OIS::KC_RIGHT)) {
 		translate += Ogre::Vector3(1, 0, 0);
 	}
-	// Apply the new direction to the spotlight. A normalized version is sent,
-	// to make sure all directions are either -1, 0, or 1.
+	// Apply the new direction to the spotlight. 
 	sceneMgr->getLight("spotLight")->setDirection(spotDir);
 #pragma endregion
 
