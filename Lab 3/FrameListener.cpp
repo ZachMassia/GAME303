@@ -36,7 +36,6 @@ FrameListener::~FrameListener(void)
 {
 	if (man != nullptr) {
 		man->destroyInputObject(key);
-		man->destroyInputObject(mouse);
 		OIS::InputManager::destroyInputSystem(man);
 	}
 }
@@ -56,7 +55,6 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 #pragma region Polygon Mode
 	// Polygon mode toggle
 	if (key->isKeyDown(OIS::KC_R)) {
-		// Toggle
 		switch(camera->getPolygonMode())
 		{
 		case Ogre::PolygonMode::PM_SOLID:
@@ -104,27 +102,39 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 #pragma endregion
 
 #pragma region Spotlight Movement
-	Ogre::Vector3 spotDir = sceneMgr->getLight("spotLight")->getDirection();
+	// This region is responsible for spotlight movement.
+	// The spotlight's scene node is translated on the X and Z axis 
+	// based on the arrow keys pressed.
+	auto spotNode = sceneMgr->getSceneNode("spotlightNode");
+	static const Ogre::Real lightVel(45.0f);
 
 	if (key->isKeyDown(OIS::KC_UP)) {
-		translate += Ogre::Vector3(0, 0, -1);
+		spotNode->translate(0, 0, -lightVel * evt.timeSinceLastFrame);
 	}
 	if (key->isKeyDown(OIS::KC_DOWN)) {
-		translate += Ogre::Vector3(0, 0, 1);
+		spotNode->translate(0, 0, lightVel * evt.timeSinceLastFrame);
 	}
 	if (key->isKeyDown(OIS::KC_LEFT)) {
-		translate += Ogre::Vector3(-1, 0, 0);
+		spotNode->translate(-lightVel * evt.timeSinceLastFrame, 0, 0);
 	}
 	if (key->isKeyDown(OIS::KC_RIGHT)) {
-		translate += Ogre::Vector3(1, 0, 0);
+		spotNode->translate(lightVel * evt.timeSinceLastFrame, 0, 0);
 	}
-	// Apply the new direction to the spotlight. 
-	sceneMgr->getLight("spotLight")->setDirection(spotDir);
 #pragma endregion
 
 #pragma region Rotate Entities
+	// This region performs rotations for the individual Sinbad entities and the whole
+	// group moving around the barrel.
 	static const Ogre::Real velocity(75.0f);
-	rootSceneNode->getChild("sinbadNode")->yaw(Ogre::Degree(velocity * evt.timeSinceLastFrame), Ogre::Node::TS_WORLD);
+	sceneMgr->getSceneNode("entParentNode")->yaw(Ogre::Degree(velocity * evt.timeSinceLastFrame), Ogre::Node::TS_WORLD);
+
+	// Use an iterator to go through each Sinbad and yaw in the oposite direction the
+	// parent node is rotating.
+	auto entNodeIter = sceneMgr->getSceneNode("entParentNode")->getChildIterator();
+	while (entNodeIter.hasMoreElements()) {
+		auto node = entNodeIter.getNext();
+		node->yaw(Ogre::Degree(velocity * -2.5 * evt.timeSinceLastFrame));
+	}
 #pragma endregion
 
 	return true;
