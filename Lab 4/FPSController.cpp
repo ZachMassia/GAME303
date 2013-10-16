@@ -93,18 +93,18 @@ void FPSController::moveCamera(Ogre::Real dt)
 void FPSController::setUpNodeHierarchy()
 {
 	// Create the camera's top node (which will only handle position).
-	cameraNode = sceneMgr->getRootSceneNode()->createChildSceneNode();
+	cameraNode = sceneMgr->getRootSceneNode()->createChildSceneNode("cameraRoot");
 	cameraNode->setPosition(0, 0, 500);
  
 	// Create the camera's yaw node as a child of camera's top node.
-	cameraYawNode = cameraNode->createChildSceneNode();
+	cameraYawNode = cameraNode->createChildSceneNode("cameraYaw");
  
 	// Create the camera's pitch node as a child of camera's yaw node.
-	cameraPitchNode = cameraYawNode->createChildSceneNode();
+	cameraPitchNode = cameraYawNode->createChildSceneNode("cameraPitch");
  
 	// Create the camera's roll node as a child of camera's pitch node
 	// and attach the camera to it.
-	cameraRollNode = cameraPitchNode->createChildSceneNode();
+	cameraRollNode = cameraPitchNode->createChildSceneNode("cameraRoll");
 	cameraRollNode->attachObject(sceneMgr->getCamera("cam1"));
 }
 } // namespace Lab4
