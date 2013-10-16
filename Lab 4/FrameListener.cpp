@@ -4,13 +4,14 @@
 #include <utility>
 
 
-namespace Lab3 {
-FrameListener::FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr)
+namespace Lab4 {
+FrameListener::FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr, FPSController* _fpsCtrl)
 	: sceneMgr(_sceneMgr),
 	  camera(sceneMgr->getCamera("cam1")),
 	  man(nullptr),
 	  key(nullptr),
-	  mouse(nullptr)
+	  mouse(nullptr),
+	  fpsCtrl(_fpsCtrl)
 {
 	size_t windowHandle = 0;
 	std::stringstream windowHandleStr;
@@ -69,6 +70,12 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 	}
 #pragma endregion
 
+	if (fpsCtrl == nullptr) {
+		return false;
+	}
+	fpsCtrl->handleInput(evt, key, mouse);
+
+/*
 #pragma region Camera Movement
 	Ogre::Vector3 translate(0, 0, 0);
 	Ogre::Real vel(35);
@@ -95,11 +102,13 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 	float rotX = mouse->getMouseState().X.rel * evt.timeSinceLastFrame * -0.5;
 	float rotY = mouse->getMouseState().Y.rel * evt.timeSinceLastFrame * -0.5;
 	
-	camera->yaw(Ogre::Radian(rotX));
-	camera->pitch(Ogre::Radian(rotY));
-	camera->moveRelative(translate * evt.timeSinceLastFrame * vel);
-#pragma endregion
+	auto playerNode = sceneMgr->getSceneNode("playerNode");
 
+	playerNode->yaw(Ogre::Radian(rotX));
+	playerNode->pitch(Ogre::Radian(rotY));
+	playerNode->translate(translate * evt.timeSinceLastFrame * vel, Ogre::Node::TS_WORLD);
+#pragma endregion
+*/
 	return true;
 }
-} // namespace Lab3
+} // namespace Lab4

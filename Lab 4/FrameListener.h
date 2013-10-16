@@ -1,14 +1,16 @@
 #pragma once
 
+#include "FPSController.h"
+
 #include <OGRE/Ogre.h>
 #include <OIS/OIS.h>
 
 
-namespace Lab3 {
+namespace Lab4 {
 class FrameListener : public Ogre::FrameListener
 {
 public:
-	FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr);
+	FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr, FPSController* _fpsCtrl);
 	~FrameListener();
 
 	bool frameStarted(const Ogre::FrameEvent& evt);
@@ -20,5 +22,7 @@ private:
 	OIS::InputManager* man;
 	OIS::Keyboard*     key;
 	OIS::Mouse*        mouse;
+
+	FPSController* fpsCtrl;
 };
-} // namespace Lab3
+} // namespace Lab4

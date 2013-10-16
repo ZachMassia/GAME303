@@ -6,7 +6,7 @@
 
 int main()
 {
-	Lab3::App app;
+	Lab4::App app;
 
 	// Launches the application, and catches any expection passed.
 	try {

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "FPSController.h"
+
 #include <OGRE/Ogre.h>
 #include <OGRE/ExampleApplication.h>
 
-namespace Lab3 {
+namespace Lab4 {
 class App : public ExampleApplication
 {
 public:
@@ -16,6 +18,7 @@ public:
 
 private:
 	Ogre::FrameListener* frameListener;
+	FPSController* fpsCtrl;
 };
-} // namespace Lab3
+} // namespace Lab4
 

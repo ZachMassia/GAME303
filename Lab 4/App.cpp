@@ -4,9 +4,10 @@
 
 #include "FrameListener.h"
 
-namespace Lab3 {
+namespace Lab4 {
 App::App() :
-	frameListener(nullptr)
+	frameListener(nullptr),
+	fpsCtrl(nullptr)
 {
 
 }
@@ -16,10 +17,22 @@ App::~App()
 	if (frameListener != nullptr) {
 		delete frameListener;
 	}
+	if (fpsCtrl != nullptr) {
+		delete fpsCtrl;
+	}
 }
 
 void App::createScene()
 {
+	fpsCtrl = new FPSController(mSceneMgr);
+
+	// Skybox
+	mSceneMgr->setSkyBox(true, "Examples/SpaceSkyBox", 5000, false);
+
+	// Create a scene node for the camera and the players light. It will
+	// have no childs and the root node is it's parent.
+	mSceneMgr->getRootSceneNode()->createChildSceneNode("playerNode");
+
 #pragma region Plane
 	// Define the mathematical plane
 	Ogre::Plane plane(Vector3::UNIT_Y, 0);
@@ -42,23 +55,28 @@ void App::createScene()
 	mSceneMgr->getRootSceneNode()->createChildSceneNode("planeNode")->attachObject(planeEnt);
 #pragma endregion
 
-	// Skybox
-	mSceneMgr->setSkyBox(true, "Examples/SpaceSkyBox", 5000, false);
+#pragma region Lights
+	auto playerSpot = mSceneMgr->createLight("playerSpotlight");
+	playerSpot->setType(Ogre::Light::LT_SPOTLIGHT);
+	playerSpot->setSpotlightRange(
+		Ogre::Degree(10.0f), // inner angle
+		Ogre::Degree(35.0f), // outer angle
+		0.75f);              // falloff
+	playerSpot->setDiffuseColour(Ogre::ColourValue(1, 0, 0));
+#pragma endregion
 }
 
 void App::createCamera()
 {
 	mCamera = mSceneMgr->createCamera("cam1");
-	mCamera->setPosition(0, 100, 150);
-	mCamera->lookAt(0.0f, 0.0f, 0.0f);
 	mCamera->setNearClipDistance(5);
 }
 
 void App::createFrameListener()
 {
 	// Create the custom frame listener
-	frameListener = new FrameListener(mWindow, mSceneMgr);
+	frameListener = new FrameListener(mWindow, mSceneMgr, fpsCtrl);
 	// Register it with the root Ogre class
 	mRoot->addFrameListener(frameListener);
 }
-} // namespace Lab3
+} // namespace Lab4
