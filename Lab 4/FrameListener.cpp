@@ -70,45 +70,13 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 	}
 #pragma endregion
 
+#pragma region FPS
 	if (fpsCtrl == nullptr) {
 		return false;
 	}
 	fpsCtrl->handleInput(evt, key, mouse);
-
-/*
-#pragma region Camera Movement
-	Ogre::Vector3 translate(0, 0, 0);
-	Ogre::Real vel(35);
-	if (key->isKeyDown(OIS::KC_W)) { // forward
-		translate += Ogre::Vector3(0, 0, -1);
-	}
-	if (key->isKeyDown(OIS::KC_S)) { // backwards
-		translate += Ogre::Vector3(0, 0, 1);
-	}
-	if (key->isKeyDown(OIS::KC_A)) { // left
-		translate += Ogre::Vector3(-1, 0, 0);
-	}
-	if (key->isKeyDown(OIS::KC_D)) { // right
-		translate += Ogre::Vector3(1, 0, 0);
-	}
-	if (key->isKeyDown(OIS::KC_E)) { // up
-		translate += Ogre::Vector3(0, 1, 0);
-	}
-	if (key->isKeyDown(OIS::KC_Q)) { // down
-		translate += Ogre::Vector3(0, -1, 0);
-	}
-
-	// Camera mouse
-	float rotX = mouse->getMouseState().X.rel * evt.timeSinceLastFrame * -0.5;
-	float rotY = mouse->getMouseState().Y.rel * evt.timeSinceLastFrame * -0.5;
-	
-	auto playerNode = sceneMgr->getSceneNode("playerNode");
-
-	playerNode->yaw(Ogre::Radian(rotX));
-	playerNode->pitch(Ogre::Radian(rotY));
-	playerNode->translate(translate * evt.timeSinceLastFrame * vel, Ogre::Node::TS_WORLD);
 #pragma endregion
-*/
+
 	return true;
 }
 } // namespace Lab4
