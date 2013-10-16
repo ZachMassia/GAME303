@@ -4,6 +4,7 @@
 #include <OIS/OIS.h>
 
 namespace Lab4 {
+// This class is based on http://www.ogre3d.org/tikiwiki/tiki-index.php?page=Creating+a+simple+first-person+camera+system
 class FPSController
 {
 public:
