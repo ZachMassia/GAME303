@@ -12,19 +12,28 @@ public:
 	~FPSController(void);
 
 	void handleInput(const Ogre::FrameEvent& evt, OIS::Keyboard* key, OIS::Mouse* mouse);
+	
 
 private:
 	void moveCamera(Ogre::Real dt);
+	void updateRay();
+	void createLights();
 	void setUpNodeHierarchy();
 
 	Ogre::SceneManager* sceneMgr;
 	
-	Ogre::SceneNode *cameraYawNode;
-	Ogre::SceneNode *cameraPitchNode;
-	Ogre::SceneNode *cameraRollNode;
-	Ogre::SceneNode *cameraNode;
+	Ogre::SceneNode* cameraYawNode;
+	Ogre::SceneNode* cameraPitchNode;
+	Ogre::SceneNode* cameraRollNode;
+	Ogre::SceneNode* cameraNode;
 
-	Ogre::Vector3 direction, velocity;
-	float rotX, rotY;
+	Ogre::Vector3 accel, velocity;
+
+	Ogre::Radian camYaw, camPitch;
+
+	Ogre::Ray camRay;
+	Ogre::ManualObject* camRayObj;
+
+	Ogre::Radian rotX, rotY;
 };
 } // namespace Lab4

@@ -1,6 +1,9 @@
 #include "FPSController.h"
 
+#include "Utils.h"
+
 #include <iostream>
+
 
 namespace Lab4 {
 FPSController::FPSController(Ogre::SceneManager* _sceneMgr) :
@@ -9,12 +12,22 @@ FPSController::FPSController(Ogre::SceneManager* _sceneMgr) :
 	cameraPitchNode(nullptr),
 	cameraRollNode(nullptr),
 	cameraNode(nullptr),
-	direction(Ogre::Vector3::ZERO),
-	velocity(Ogre::Vector3(25, 15, 25))
+	accel(Ogre::Vector3::ZERO),
+	velocity(50, 50, 50)
+	//camRayObj(sceneMgr->createManualObject("rayDebugLine"))
 {
 	setUpNodeHierarchy();
-}
+	createLights();
 
+	/* TODO: Visual Ray
+	camRayObj->setDynamic(true);
+	camRayObj->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
+	camRayObj->position(cameraNode->getPosition());
+	camRayObj->position(Utils::yawPitchToDirVect(camPitch, camYaw) * 125);
+	camRayObj->end();
+	cameraRollNode->attachObject(camRayObj);
+	*/
+}
 
 FPSController::~FPSController(void)
 {
@@ -23,29 +36,29 @@ FPSController::~FPSController(void)
 void FPSController::handleInput(const Ogre::FrameEvent& evt, OIS::Keyboard* key, OIS::Mouse* mouse)
 {
 	// Get the mouse movement.
-	rotX = mouse->getMouseState().X.rel * evt.timeSinceLastFrame * -0.5;
-	rotY = mouse->getMouseState().Y.rel * evt.timeSinceLastFrame * -0.5;
+	rotX = Ogre::Radian(mouse->getMouseState().X.rel * evt.timeSinceLastFrame * -0.5);
+	rotY = Ogre::Radian(mouse->getMouseState().Y.rel * evt.timeSinceLastFrame * -0.5);
 
-	direction = Ogre::Vector3::ZERO; // Reset the vector
+	accel = Ogre::Vector3::ZERO;
 
 	if (key->isKeyDown(OIS::KC_W)) { // forward
-		direction.z = -1;
+		accel.z = -1;
 	}
 	if (key->isKeyDown(OIS::KC_S)) { // backwards
-		direction.z = 1;
+		accel.z = 1;
 	}
 	if (key->isKeyDown(OIS::KC_A)) { // left
-		direction.x = -1;
+		accel.x = -1;
 	}
 	if (key->isKeyDown(OIS::KC_D)) { // right
-		direction.x = 1;
+		accel.x = 1;
 	}
 #pragma region Debug Controls
 	if (key->isKeyDown(OIS::KC_Q)) {
-		direction.y = -1;
+		accel.y = -1;
 	}
 	if (key->isKeyDown(OIS::KC_E)) {
-		direction.y = 1;
+		accel.y = 1;
 	}
 	if (key->isKeyDown(OIS::KC_B)) {
 		std::cout << cameraNode->getPosition() << std::endl;
@@ -59,18 +72,19 @@ void FPSController::moveCamera(Ogre::Real dt)
 	Ogre::Real pitchAngle, pitchAngleSign;
 
 	// Yaw the camera according to the mouse relative movement.
-	cameraYawNode->yaw(Ogre::Radian(rotX));
+	cameraYawNode->yaw(rotX);
+	camYaw += rotX;
 
 	// Pitch the camera according to the mouse relative movement.
-	cameraPitchNode->pitch(Ogre::Radian(rotY));
+	cameraPitchNode->pitch(rotY);
+	camPitch += rotY;
 
-	// Translate the camera according to the translate vector which is
-	// controlled by the keyboard arrows.
+	// Move the camera around the world.
 	cameraNode->translate(cameraYawNode->getOrientation() *
 						  cameraPitchNode->getOrientation() *
-						  direction * velocity * dt,
+						  accel * velocity * dt,
 						  Ogre::Node::TS_LOCAL);
-
+	
 	// Angle of rotation around the X-Axis.
 	pitchAngle = (2 * Ogre::Degree(Ogre::Math::ACos(cameraPitchNode->getOrientation().w)).valueDegrees());
 
@@ -88,13 +102,55 @@ void FPSController::moveCamera(Ogre::Real dt)
 			cameraPitchNode->setOrientation(Ogre::Quaternion(Ogre::Math::Sqrt(0.5f), -Ogre::Math::Sqrt(0.5f), 0, 0));
 		}
 	} 
+
+	// Keep the camera within the playing area.
+	auto pos = cameraNode->getPosition();
+	Utils::clampVector(pos, Ogre::Vector3(-250, 7.5f, -250), Ogre::Vector3(250, 35, 250));
+	cameraNode->setPosition(pos);
+
+	// Notify cameraNode's children
+	cameraYawNode->needUpdate();
+	cameraPitchNode->needUpdate();
+	cameraRollNode->needUpdate();
+
+	updateRay();
+}
+
+void FPSController::updateRay()
+{
+	camRay.setOrigin(cameraNode->getPosition());
+	camRay.setDirection(Utils::yawPitchToDirVect(camPitch, camYaw));
+}
+
+void FPSController::createLights()
+{
+	// Spotlight
+	auto light = sceneMgr->createLight("playerSpotlight");
+	light->setType(Ogre::Light::LT_SPOTLIGHT);
+	light->setSpotlightRange(
+		Ogre::Degree(20.0f), // inner angle
+		Ogre::Degree(45.0f), // outer angle
+		0.25f);              // falloff
+
+	// Laser
+	/*auto laser = sceneMgr->createLight("playerLaser");
+	light->setType(Ogre::Light::LT_SPOTLIGHT);
+	light->setSpotlightRange(
+		Ogre::Degree(2.5f), // inner angle
+		Ogre::Degree(5.0f), // outer angle
+		1.25f);             // falloff
+	*/
+	auto node = cameraRollNode->createChildSceneNode("lightNode");
+	node->attachObject(light);
+	//node->attachObject(laser);
+	node->yaw(Ogre::Degree(180));
 }
 
 void FPSController::setUpNodeHierarchy()
 {
 	// Create the camera's top node (which will only handle position).
 	cameraNode = sceneMgr->getRootSceneNode()->createChildSceneNode("cameraRoot");
-	cameraNode->setPosition(0, 0, 500);
+	cameraNode->setPosition(0, 7.5, 125);
  
 	// Create the camera's yaw node as a child of camera's top node.
 	cameraYawNode = cameraNode->createChildSceneNode("cameraYaw");
