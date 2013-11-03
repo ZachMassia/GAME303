@@ -1,13 +1,23 @@
 #pragma once
 
 #include "FPSController.h"
+#include "GameObject.h"
 
+#include <array>
 #include <OGRE/Ogre.h>
 #include <OGRE/ExampleApplication.h>
+
 
 namespace Lab4 {
 class App : public ExampleApplication
 {
+private:
+	Ogre::FrameListener* frameListener;
+	FPSController* fpsCtrl;
+
+	GameObjectFactory* targetFactory;
+	GameObjectFactory* ballFactory;
+
 public:
 	App();
 	~App();
@@ -17,8 +27,7 @@ public:
 	void createFrameListener();
 
 private:
-	Ogre::FrameListener* frameListener;
-	FPSController* fpsCtrl;
+	GameObject* getNextBall();
 };
 } // namespace Lab4
 

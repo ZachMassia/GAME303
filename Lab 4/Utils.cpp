@@ -2,10 +2,10 @@
 
 #include <OGRE/Ogre.h>
 
-
 using Ogre::Vector3;
 using Ogre::Math;
 using Ogre::Radian;
+
 
 namespace Lab4
 {
@@ -26,4 +26,18 @@ Vector3 Utils::yawPitchToDirVect(Radian pitch, Radian yaw)
 	v.z = Math::Cos(pitch);
 	return v;
 }
+
+const std::string Utils::rayToStr(const Ogre::Ray& ray)
+{
+	std::stringstream s;
+	const auto o = ray.getOrigin();
+	const auto d = ray.getDirection();
+	// Format: `O: (x, y, z) D: (x, y, z)`
+	// O - Origin
+	// D - Direction
+	s << "O: (" << o.x << ", " << o.y << ", " << o.z << ") D: (" <<
+		d.x << ", " << d.y << ", " << d.z << ")";
+	return s.str();
+}
+
 } // namespace Lab4

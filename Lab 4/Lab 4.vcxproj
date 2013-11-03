@@ -84,12 +84,15 @@
     <ClCompile Include="FPSController.cpp" />
     <ClCompile Include="FrameListener.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="Event.h" />
     <ClInclude Include="FPSController.h" />
     <ClInclude Include="FrameListener.h" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

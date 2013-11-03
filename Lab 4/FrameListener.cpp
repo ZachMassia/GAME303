@@ -1,17 +1,21 @@
 #include "FrameListener.h"
 
+#include "Utils.h"
+
 #include <sstream>
+#include <algorithm>
 #include <utility>
 
 
 namespace Lab4 {
-FrameListener::FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr, FPSController* _fpsCtrl)
+FrameListener::FrameListener(Ogre::RenderWindow* win, Ogre::SceneManager* _sceneMgr, FPSController* _fpsCtrl, GameObjectFactory* _targetFactory)
 	: sceneMgr(_sceneMgr),
 	  camera(sceneMgr->getCamera("cam1")),
 	  man(nullptr),
 	  key(nullptr),
 	  mouse(nullptr),
-	  fpsCtrl(_fpsCtrl)
+	  fpsCtrl(_fpsCtrl),
+	  targetFactory(_targetFactory)
 {
 	size_t windowHandle = 0;
 	std::stringstream windowHandleStr;
@@ -51,31 +55,35 @@ bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 		return false;
 	}
 #pragma endregion
-	
-#pragma region Polygon Mode
-	// Polygon mode toggle
-	if (key->isKeyDown(OIS::KC_R)) {
-		switch(camera->getPolygonMode())
-		{
-		case Ogre::PolygonMode::PM_SOLID:
-			camera->setPolygonMode(Ogre::PolygonMode::PM_WIREFRAME);
-			break;
-		case Ogre::PolygonMode::PM_WIREFRAME:
-			camera->setPolygonMode(Ogre::PolygonMode::PM_POINTS);
-			break;
-		case Ogre::PolygonMode::PM_POINTS:
-			camera->setPolygonMode(Ogre::PolygonMode::PM_SOLID);
-			break;
-		}
-	}
-#pragma endregion
 
-#pragma region FPS
-	if (fpsCtrl == nullptr) {
+	OnFrameStarted.RaiseEvent(new _FrameEventArgs(key, mouse, &evt));
+
+#pragma region Collisions
+	auto objects = targetFactory->getAll();
+	// Check if the current GameObject is in the camera ray's path.
+	// The object's axis aligned bounding box is passed to the ray.
+	std::for_each(objects.begin(), objects.end(), [&] (GameObject* obj) 
+	{
+		auto result = fpsCtrl->getCameraRay().intersects(obj->getAABB());
+		if (result.first) {
+			obj->setAlive(false);
+		}
+	});
+#pragma endregion
+	return true;
+}
+
+bool FrameListener::frameRenderingQueued(const Ogre::FrameEvent& evt)
+{
+	key->capture();   
+	mouse->capture(); 
+
+	// Exit on Escape
+	if (key->isKeyDown(OIS::KC_ESCAPE)) {
 		return false;
 	}
-	fpsCtrl->handleInput(evt, key, mouse);
-#pragma endregion
+
+	OnFrameRenderingQueued.RaiseEvent(new _FrameEventArgs(key, mouse, &evt));
 
 	return true;
 }

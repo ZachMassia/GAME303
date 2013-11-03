@@ -3,30 +3,23 @@
 #include "Utils.h"
 
 #include <iostream>
+#include <sstream>
 
 
 namespace Lab4 {
-FPSController::FPSController(Ogre::SceneManager* _sceneMgr) :
+FPSController::FPSController(Ogre::SceneManager* _sceneMgr, Ogre::Viewport* _viewPort) :
 	sceneMgr(_sceneMgr),
+	viewPort(_viewPort),
+	cam1(sceneMgr->getCamera("cam1")),
 	cameraYawNode(nullptr),
 	cameraPitchNode(nullptr),
 	cameraRollNode(nullptr),
 	cameraNode(nullptr),
 	accel(Ogre::Vector3::ZERO),
 	velocity(50, 50, 50)
-	//camRayObj(sceneMgr->createManualObject("rayDebugLine"))
 {
 	setUpNodeHierarchy();
 	createLights();
-
-	/* TODO: Visual Ray
-	camRayObj->setDynamic(true);
-	camRayObj->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_LINE_LIST);
-	camRayObj->position(cameraNode->getPosition());
-	camRayObj->position(Utils::yawPitchToDirVect(camPitch, camYaw) * 125);
-	camRayObj->end();
-	cameraRollNode->attachObject(camRayObj);
-	*/
 }
 
 FPSController::~FPSController(void)
@@ -67,22 +60,25 @@ void FPSController::handleInput(const Ogre::FrameEvent& evt, OIS::Keyboard* key,
 	moveCamera(evt.timeSinceLastFrame);
 }
 
+const Ogre::Ray& FPSController::getCameraRay() const
+{
+	return camRay;
+}
+
 void FPSController::moveCamera(Ogre::Real dt)
 {
 	Ogre::Real pitchAngle, pitchAngleSign;
 
 	// Yaw the camera according to the mouse relative movement.
 	cameraYawNode->yaw(rotX);
-	camYaw += rotX;
 
 	// Pitch the camera according to the mouse relative movement.
 	cameraPitchNode->pitch(rotY);
-	camPitch += rotY;
 
 	// Move the camera around the world.
 	cameraNode->translate(cameraYawNode->getOrientation() *
 						  cameraPitchNode->getOrientation() *
-						  accel * velocity * dt,
+						  accel * velocity * dt, // TODO: Normalize for diagonal movement.
 						  Ogre::Node::TS_LOCAL);
 	
 	// Angle of rotation around the X-Axis.
@@ -108,18 +104,14 @@ void FPSController::moveCamera(Ogre::Real dt)
 	Utils::clampVector(pos, Ogre::Vector3(-250, 7.5f, -250), Ogre::Vector3(250, 35, 250));
 	cameraNode->setPosition(pos);
 
-	// Notify cameraNode's children
+	// Notify cameraNode's children.
 	cameraYawNode->needUpdate();
 	cameraPitchNode->needUpdate();
 	cameraRollNode->needUpdate();
 
-	updateRay();
-}
-
-void FPSController::updateRay()
-{
-	camRay.setOrigin(cameraNode->getPosition());
-	camRay.setDirection(Utils::yawPitchToDirVect(camPitch, camYaw));
+	// Update the camera ray.
+	camRay.setOrigin(cam1->getRealPosition());
+	camRay.setDirection(cam1->getRealDirection());
 }
 
 void FPSController::createLights()
@@ -161,6 +153,6 @@ void FPSController::setUpNodeHierarchy()
 	// Create the camera's roll node as a child of camera's pitch node
 	// and attach the camera to it.
 	cameraRollNode = cameraPitchNode->createChildSceneNode("cameraRoll");
-	cameraRollNode->attachObject(sceneMgr->getCamera("cam1"));
+	cameraRollNode->attachObject(cam1);
 }
 } // namespace Lab4
