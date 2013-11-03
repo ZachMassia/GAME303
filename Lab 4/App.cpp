@@ -128,13 +128,13 @@ void App::createFrameListener()
 	};
 
 	// Update Balls.
-	frameStartedEvents.push_back([&] (Args args) {
+	renderingQueuedEvents.push_back([&] (Args args) {
 		updateObjectFactory(ballFactory, args);
 	});
 
 	// Update Targets.
-	frameStartedEvents.push_back([&](Args args) {
-		updateObjectFactory(ballFactory, args);
+	renderingQueuedEvents.push_back([&](Args args) {
+		updateObjectFactory(targetFactory, args);
 	});
 
 	// Polygon Mode Toggle
