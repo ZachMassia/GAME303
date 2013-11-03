@@ -27,6 +27,10 @@ App::~App()
 	if (targetFactory != nullptr) {
 		delete targetFactory;
 	}
+
+	if (ballFactory != nullptr) {
+		delete ballFactory;
+	}
 }
 
 void App::createScene()
