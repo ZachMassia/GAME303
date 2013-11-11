@@ -27,6 +27,10 @@ void GameObject::update(const Ogre::FrameEvent* evt)
 		return;
 
 	localNode->translate(acceleration * velocity * evt->timeSinceLastFrame);
+
+	// Update the object's ray.
+	ray.setOrigin(localNode->getPosition());
+	ray.setDirection(acceleration.normalisedCopy());
 }
 
 #pragma region Getters / Setters
@@ -53,7 +57,7 @@ const Ogre::Vector3& GameObject::getVelocity() const
 
 void GameObject::setAcceleration(const Ogre::Vector3& a)
 {
-	acceleration = a;
+	acceleration = a; 
 }
 
 void GameObject::setVelocity(const Ogre::Vector3& v)
@@ -85,19 +89,31 @@ const Ogre::AxisAlignedBox& GameObject::getAABB() const
 {
 	return entity->getWorldBoundingBox();
 }
+
+const Ogre::Ray& GameObject::getRay() const
+{
+	return ray;
+}
+
+const Ogre::Vector3& GameObject::getWorldPosition() const
+{
+	return localNode->_getDerivedPosition();
+}
 #pragma endregion
 
 void GameObject::init(Ogre::SceneManager* sm)
 {
 	// Use default generated name if no name passed in.
-	if (name.length() > 0)
+	if (name.length() > 0) {
 		entity = sm->createEntity(name, meshName);
-	else
+		localNode = parentNode->createChildSceneNode(name + "Node");
+	}
+	else {
 		entity = sm->createEntity(meshName);
-
-	localNode = parentNode->createChildSceneNode(name + "Node");
+		localNode = parentNode->createChildSceneNode();
+	}
+		
 	localNode->attachObject(entity);
-
 }
 #pragma endregion
 

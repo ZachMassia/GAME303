@@ -27,7 +27,12 @@ public:
 	void createFrameListener();
 
 private:
+	// Search through the ball factory for the first one alive.
+	// If all balls are dead, nullptr is returned.
 	GameObject* getNextBall();
+
+	// Timer used to limit the fire rate for balls.
+	Ogre::Timer* timer;
 };
 } // namespace Lab4
 

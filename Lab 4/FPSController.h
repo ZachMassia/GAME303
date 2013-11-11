@@ -15,6 +15,8 @@ public:
 
 	void handleInput(const Ogre::FrameEvent& evt, OIS::Keyboard* key, OIS::Mouse* mouse);
 	const Ogre::Ray& getCameraRay() const;
+	const Ogre::AxisAlignedBox& getCameraAABB() const;
+	const Ogre::Vector3& getWorldPosition() const;
 
 private:
 	void moveCamera(Ogre::Real dt);

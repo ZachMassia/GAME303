@@ -65,6 +65,16 @@ const Ogre::Ray& FPSController::getCameraRay() const
 	return camRay;
 }
 
+const Ogre::AxisAlignedBox& FPSController::getCameraAABB() const
+{
+	return cam1->getWorldBoundingBox();
+}
+
+const Ogre::Vector3& FPSController::getWorldPosition() const
+{
+	return cameraNode->_getDerivedPosition();
+}
+
 void FPSController::moveCamera(Ogre::Real dt)
 {
 	Ogre::Real pitchAngle, pitchAngleSign;

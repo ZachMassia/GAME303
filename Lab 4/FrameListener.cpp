@@ -46,30 +46,12 @@ FrameListener::~FrameListener(void)
 
 bool FrameListener::frameStarted(const Ogre::FrameEvent& evt)
 {
-#pragma region Poll devices
 	key->capture();   
 	mouse->capture(); 
 
-	// Exit on Escape
-	if (key->isKeyDown(OIS::KC_ESCAPE)) {
-		return false;
-	}
-#pragma endregion
-
+	// Notify event subscribers.
 	OnFrameStarted.RaiseEvent(new _FrameEventArgs(key, mouse, &evt));
 
-#pragma region Collisions
-	auto objects = targetFactory->getAll();
-	// Check if the current GameObject is in the camera ray's path.
-	// The object's axis aligned bounding box is passed to the ray.
-	std::for_each(objects.begin(), objects.end(), [&] (GameObject* obj) 
-	{
-		auto result = fpsCtrl->getCameraRay().intersects(obj->getAABB());
-		if (result.first) {
-			obj->setAlive(false);
-		}
-	});
-#pragma endregion
 	return true;
 }
 
@@ -83,6 +65,7 @@ bool FrameListener::frameRenderingQueued(const Ogre::FrameEvent& evt)
 		return false;
 	}
 
+	// Notify event subscribers.
 	OnFrameRenderingQueued.RaiseEvent(new _FrameEventArgs(key, mouse, &evt));
 
 	return true;

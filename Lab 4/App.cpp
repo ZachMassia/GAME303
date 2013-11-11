@@ -9,7 +9,8 @@ App::App() :
 	frameListener(nullptr),
 	fpsCtrl(nullptr),
 	targetFactory(nullptr),
-	ballFactory(nullptr)
+	ballFactory(nullptr),
+	timer(nullptr)
 {
 
 }
@@ -58,35 +59,76 @@ void App::createScene()
 #pragma endregion
 
 #pragma region Lights
-	mSceneMgr->setAmbientLight(Ogre::ColourValue::Black);
+	//mSceneMgr->setAmbientLight(Ogre::ColourValue::Black);
+	mSceneMgr->setAmbientLight(Ogre::ColourValue::White);
 #pragma endregion
 
 #pragma region Entities
 	auto objNode = mSceneMgr->getSceneNode("planeNode")->createChildSceneNode("objNode");
+	
+	// -- Create Targets -- //
 	targetFactory = new GameObjectFactory(mSceneMgr, objNode);
 
-	// Object A
-	targetFactory->makeNew("objA", "barrel.mesh",  Ogre::Vector3(-10.0f,  3.0f,  10.0f));
-	// Object B
-	targetFactory->makeNew("objB", "barrel.mesh",  Ogre::Vector3( 10.0f,  3.0f,  10.0f));
-	// Object C
-	targetFactory->makeNew("objC", "Penguin.mesh", Ogre::Vector3(-10.0f,  4.5f, -10.0f));
-	targetFactory->get("objC")->getNode()->scale(0.25f, 0.25f, 0.25f);
-	// Object D
-	targetFactory->makeNew("objD", "Penguin.mesh", Ogre::Vector3( 10.0f,  4.5f, -10.0f));
-	targetFactory->get("objD")->getNode()->scale(0.25f, 0.25f, 0.25f);
+	// Barrels
+	auto barrel1 = targetFactory->makeNew("barrel1", "barrel.mesh",  Ogre::Vector3(-10.0f, 3.0f, 10.0f));
+	
+	auto barrel2 = targetFactory->makeNew("barrel2", "barrel.mesh",  Ogre::Vector3(10.0f, 3.0f, 10.0f));
+	
+	// Penguins
+	const Ogre::Vector3 penguinScale(0.25f, 0.25f, 0.25f);
+	
+	auto penguin1 = targetFactory->makeNew("penguin1", "Penguin.mesh", Ogre::Vector3(-10.0f, 4.5f, -10.0f));
+	penguin1->getNode()->setScale(penguinScale);
+	
+	auto penguin2 = targetFactory->makeNew("penguin2", "Penguin.mesh", Ogre::Vector3(10.0f, 4.5f, -10.0f));
+	penguin2->getNode()->setScale(penguinScale);
+
+	// Cubes
+	const Ogre::Vector3 cubeScale(0.35f, 0.35f, 0.35f);
+	
+	auto cube1 = targetFactory->makeNew("cube1", "cube.mesh", Ogre::Vector3(20.0f, 3.0f, -100.0f));
+	cube1->getNode()->setScale(cubeScale);
+
+	auto cube2 = targetFactory->makeNew("cube2", "cube.mesh", Ogre::Vector3(-45.0f, 3.0f, -60.0f));
+	cube2->getNode()->setScale(cubeScale);
+
+	// Ninjas
+	const Ogre::Vector3 ninjaScale(0.10f, 0.10f, 0.10f);
+
+	auto ninja1 = targetFactory->makeNew("ninja1", "ninja.mesh", Ogre::Vector3(100.0f, 3.0f, -25.0f));
+	ninja1->getNode()->setScale(ninjaScale);
+
+	auto ninja2 = targetFactory->makeNew("ninja2", "ninja.mesh", Ogre::Vector3(-75.0f, 3.0f, 100.0f));
+	ninja2->getNode()->setScale(ninjaScale);
+
+	// -- Create Balls -- //
+	ballFactory = new GameObjectFactory(mSceneMgr, objNode);
+	char id = 'A';
+	for (int i = 0; i < 6; ++i)
+	{
+		std::stringstream s;
+		s << "ball" << id++;
+
+		auto ball = ballFactory->makeNew(s.str(), "sphere.mesh", Ogre::Vector3::ZERO);
+		ball->getNode()->scale(0.05f, 0.05f, 0.05f);
+		ball->setAlive(false);
+		ball->setVelocity(Ogre::Vector3(45.0f, 45.0f, 45.0f));
+	}
 
 	/* DEBUG - SHOW BOUND BOX
-	auto objs = targetFactory->getAll();
-	for (int i = 0; i < objs.size(); ++i)
-	{
-		auto obj = objs.at(i);
-		obj->getNode()->showBoundingBox(true);
-	}
+	auto showBoundingBox = [&](GameObjectFactory* f) {
+		auto objs = f->getAll();
+		std::for_each(objs.begin(), objs.end(), [](GameObject* obj) {
+			obj->getNode()->showBoundingBox(true);
+		});
+	};
+	showBoundingBox(ballFactory);
+	showBoundingBox(targetFactory);
 	//*/
 #pragma endregion
 
 	fpsCtrl = new FPSController(mSceneMgr, mWindow->getViewport(0));
+	timer = new Ogre::Timer();
 }
 
 void App::createCamera()
@@ -112,9 +154,56 @@ void App::createFrameListener()
 	std::vector<EventFunc> frameStartedEvents;
 	std::vector<EventFunc> renderingQueuedEvents;
 
+	// Ball collisions.
+	renderingQueuedEvents.push_back([&](Args args) {
+		auto balls = ballFactory->getAll();
+		auto targets = targetFactory->getAll();
+		const auto playerPos = fpsCtrl->getWorldPosition();
+
+		std::for_each(balls.begin(), balls.end(), [&](GameObject* ball) {
+			if (!ball->getAlive()) {
+				return;
+			}
+
+			// Check for collisions with the targets.
+			std::for_each(targets.begin(), targets.end(), [&](GameObject* obj) {
+				if (obj->getAlive() && ball->getAABB().intersects(obj->getAABB())) {
+					obj->setAlive(false);
+					ball->setAlive(false);
+				}
+			});
+
+			// Kill the ball if it's too far away and still alive.
+			static const float maxDist = 350.0f * 350.0f;
+			if (ball->getAlive() && playerPos.squaredDistance(ball->getWorldPosition()) > maxDist) {
+				ball->setAlive(false);
+			}
+
+		});
+	});
+
 	// Update FPS Controller.
 	frameStartedEvents.push_back([&] (Args args) {
 		if (fpsCtrl != nullptr) fpsCtrl->handleInput(*args->evt, args->key, args->mouse);
+	});
+
+	// Check for spacebar (fire event).
+	renderingQueuedEvents.push_back([&](Args args) {
+		if (timer->getMilliseconds() < 750) {
+			return; // Limit the fire rate.
+		}
+
+		if (args->key->isKeyDown(OIS::KC_SPACE)) {
+			timer->reset();
+			auto ball = getNextBall();
+			if (ball == nullptr) {
+				return; // No balls alive.
+			}
+			ball->setAlive(true);
+			ball->setAcceleration(fpsCtrl->getCameraRay().getDirection().normalisedCopy());
+			ball->getNode()->setPosition(fpsCtrl->getCameraRay().getOrigin());
+			ball->getNode()->needUpdate();
+		}
 	});
 
 	// Calls the update method on all objects of a given factory.
@@ -176,7 +265,7 @@ GameObject* App::getNextBall()
 {
 	auto balls = ballFactory->getAll();
 	auto result = std::find_if(balls.begin(), balls.end(), [](GameObject* b) { 
-		return b->getAlive() == false; 
+		return b != nullptr && b->getAlive() == false; 
 	});
 	return result == balls.end() ? nullptr : *result;
 }
